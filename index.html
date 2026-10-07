@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="zh-Hant-TW" data-theme="light">
+<script>try{var t=localStorage.getItem('fire-sim-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>財務自由模擬器</title>
+<meta name="description" content="輸入年齡、生活開銷、投資與報酬率，試算何時達到財務自由，以及退休後資產能否支撐到 90 歲。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231B3A6B'/%3E%3Crect x='7' y='18' width='4' height='7' fill='%23fff'/%3E%3Crect x='14' y='13' width='4' height='12' fill='%23fff'/%3E%3Crect x='21' y='7' width='4' height='18' fill='%23C9A063'/%3E%3C/svg%3E">
+<style>
+:root{
+  --navy:#1B3A6B; --navy-deep:#122A50; --navy-soft:#EEF2F8;
+  --gold:#A8813F; --gold-soft:#F6F0E4;
+  --accent:#B33A2E;
+  --bg:#FFFFFF; --bg-sub:#F7F6F2; --surface:#FFFFFF;
+  --ink:#1E2330; --ink-2:#4A5163; --ink-3:#7A8193;
+  --line:#D9DCE3; --line-soft:#ECEEF2;
+  --th:#EEF1F6; --row-alt:#FAFAF8; --row-hit:#F6F0E4;
+  --input-bg:#FFFFFF; --input-line:#B9BFCB;
+  --s1:#2A5CAA; --s2:#B07A2A; --chart-surface:#FBFAF7; --grid:#E6E8EC;
+  --ok:#2F6B45; --ng:#B33A2E;
+  --footer:#122A50; --footer-ink:#C9D2E3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#8FB1E6; --navy-deep:#0E1626; --navy-soft:#1A2333;
+    --gold:#CFA866; --gold-soft:#2A2418;
+    --accent:#E0796C;
+    --bg:#11151D; --bg-sub:#161B25; --surface:#171C26;
+    --ink:#E6E9EF; --ink-2:#B4BBC9; --ink-3:#8790A2;
+    --line:#2E3646; --line-soft:#252C3A;
+    --th:#1E2636; --row-alt:#151A23; --row-hit:#2A2418;
+    --input-bg:#11151D; --input-line:#3A4457;
+    --s1:#4C82D6; --s2:#B98A3C; --chart-surface:#141821; --grid:#252C3A;
+    --ok:#7CC39A; --ng:#E0796C;
+    --footer:#0B0F17; --footer-ink:#9AA5BA;
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#8FB1E6; --navy-deep:#0E1626; --navy-soft:#1A2333;
+  --gold:#CFA866; --gold-soft:#2A2418;
+  --accent:#E0796C;
+  --bg:#11151D; --bg-sub:#161B25; --surface:#171C26;
+  --ink:#E6E9EF; --ink-2:#B4BBC9; --ink-3:#8790A2;
+  --line:#2E3646; --line-soft:#252C3A;
+  --th:#1E2636; --row-alt:#151A23; --row-hit:#2A2418;
+  --input-bg:#11151D; --input-line:#3A4457;
+  --s1:#4C82D6; --s2:#B98A3C; --chart-surface:#141821; --grid:#252C3A;
+  --ok:#7CC39A; --ng:#E0796C;
+  --footer:#0B0F17; --footer-ink:#9AA5BA;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:15px;line-height:1.8;letter-spacing:.02em}
+.serif{font-family:"Noto Serif TC","Hiragino Mincho ProN",serif}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+a{color:var(--navy)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* 頁首 */
+.topline{height:4px;background:linear-gradient(90deg,var(--navy) 0 78%,var(--gold) 78% 100%)}
+header.site{border-bottom:1px solid var(--line);background:var(--surface)}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+.brand-mark{width:34px;height:34px;flex:none}
+.brand-name{font-size:17px;font-weight:700;letter-spacing:.08em;line-height:1.3}
+.brand-name small{display:block;font-size:10px;font-weight:500;letter-spacing:.18em;color:var(--ink-3)}
+nav.gnav{display:flex;gap:28px;font-size:13px}
+nav.gnav a{color:var(--ink-2);text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.gnav a:hover{color:var(--navy);border-bottom-color:var(--navy)}
+.theme-btn{font:inherit;font-size:12px;padding:4px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;flex:none}
+.theme-btn:hover{border-color:var(--navy);color:var(--navy)}
+
+.crumb{font-size:12px;color:var(--ink-3);padding:12px 0}
+.crumb span+span::before{content:"＞";margin:0 8px;color:var(--line)}
+
+/* 主視覺 */
+.hero{background:var(--bg-sub);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.hero .wrap{padding-top:44px;padding-bottom:44px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end}
+.hero .eyebrow{font-size:11px;letter-spacing:.3em;color:var(--gold);font-weight:700;margin:0 0 10px}
+.hero h1{font-size:34px;font-weight:700;margin:0 0 14px;letter-spacing:.1em;line-height:1.4}
+.hero p.lead{margin:0;color:var(--ink-2);max-width:640px}
+.hero .note{font-size:12px;color:var(--ink-3);margin-top:12px}
+.hero-steps{display:flex;gap:0;border:1px solid var(--line);background:var(--surface)}
+.hero-steps div{padding:12px 18px;font-size:12px;color:var(--ink-2);border-right:1px solid var(--line);text-align:center;min-width:92px}
+.hero-steps div:last-child{border-right:0}
+.hero-steps b{display:block;font-family:"Noto Serif TC",serif;font-size:20px;color:var(--navy);line-height:1.3}
+
+/* 區塊標題 */
+section.block{padding:56px 0 8px}
+.sec-head{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:28px}
+.sec-no{font-family:"Noto Serif TC",serif;font-size:30px;color:var(--gold);line-height:1}
+.sec-title{font-size:22px;font-weight:700;margin:0;letter-spacing:.08em}
+.sec-en{font-size:11px;letter-spacing:.24em;color:var(--ink-3);margin-left:auto;text-transform:uppercase}
+.sub-head{font-size:16px;font-weight:700;margin:36px 0 14px;padding-left:12px;border-left:4px solid var(--navy);line-height:1.4}
+.sub-head:first-child{margin-top:0}
+
+/* 表單 */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
+.ftable{width:100%;border-collapse:collapse;border-top:1px solid var(--line)}
+.ftable th,.ftable td{border-bottom:1px solid var(--line);padding:12px 14px;vertical-align:middle}
+.ftable th{background:var(--th);text-align:left;font-weight:500;font-size:14px;width:46%}
+.ftable th .hint{display:block;font-size:11px;color:var(--ink-3);font-weight:400;line-height:1.5}
+.tag{display:inline-block;font-size:10px;letter-spacing:.1em;padding:0 6px;margin-left:6px;border:1px solid var(--gold);color:var(--gold);line-height:1.6;vertical-align:1px}
+.field{display:flex;align-items:center;gap:8px}
+.field input,.field select{flex:1;min-width:0;height:38px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--ink);font:inherit;font-size:15px;padding:0 10px;text-align:right;border-radius:0;font-variant-numeric:tabular-nums}
+.field select{text-align:left}
+.field input:focus,.field select:focus{outline:2px solid var(--s1);outline-offset:-1px;border-color:var(--s1)}
+.field input[aria-invalid="true"]{border-color:var(--ng);background:color-mix(in srgb,var(--ng) 6%,var(--input-bg))}
+.unit{font-size:13px;color:var(--ink-2);width:40px;flex:none}
+.form-actions{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.btn{font:inherit;font-size:14px;letter-spacing:.1em;padding:10px 32px;border:1px solid var(--navy);background:var(--surface);color:var(--navy);cursor:pointer;border-radius:0}
+.btn:hover{background:var(--navy-soft)}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+:root[data-theme="dark"] .btn.primary{color:#0E1626}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0E1626}}
+.btn.primary:hover{filter:brightness(1.1);background:var(--navy)}
+.btn.small{padding:6px 14px;font-size:13px;letter-spacing:.04em}
+.err{color:var(--ng);font-size:13px;text-align:center;margin-top:12px;min-height:1em}
+
+/* 結果 */
+.result-box{border:1px solid var(--navy);background:var(--surface)}
+.result-head{background:var(--navy);color:#fff;padding:10px 20px;font-size:14px;letter-spacing:.12em;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+:root[data-theme="dark"] .result-head{color:#0E1626}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .result-head{color:#0E1626}}
+.result-head span:last-child{font-size:12px;opacity:.85;letter-spacing:.04em}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr)}
+.kpi{padding:22px 20px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi .k-label{font-size:12px;color:var(--ink-2);letter-spacing:.06em}
+.kpi .k-value{font-family:"Noto Serif TC",serif;font-size:30px;font-weight:700;color:var(--ink);line-height:1.35;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .k-value small{font-family:"Noto Sans TC",sans-serif;font-size:13px;font-weight:500;margin-left:4px;color:var(--ink-2)}
+.kpi .k-sub{font-size:12px;color:var(--ink-3);margin-top:4px}
+.kpi.hl .k-value{color:var(--accent)}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.status.ok{color:var(--ok)} .status.ng{color:var(--ng)}
+.verdict{padding:14px 20px;border-top:1px solid var(--line);font-size:14px;background:var(--bg-sub);color:var(--ink-2)}
+.verdict b{color:var(--ink)}
+
+/* 圖表 */
+.chart-card{border:1px solid var(--line);background:var(--chart-surface);padding:18px 18px 10px}
+.chart-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.chart-title{font-size:14px;font-weight:700}
+.legend{display:flex;gap:18px;font-size:12px;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:6px}
+.legend i.area{height:10px;opacity:.55}
+.chart-box{position:relative;height:320px}
+.chart-cap{font-size:12px;color:var(--ink-3);margin:8px 0 0}
+
+/* 資料表 */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);max-height:520px;overflow-y:auto;margin-top:20px}
+table.data{border-collapse:collapse;width:100%;font-size:13px;min-width:720px}
+table.data th{position:sticky;top:0;background:var(--th);font-weight:500;color:var(--ink-2);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right;z-index:1}
+table.data th:first-child,table.data td:first-child{text-align:center}
+table.data td{padding:7px 12px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.data tbody tr:nth-child(even){background:var(--row-alt)}
+table.data tbody tr.hit{background:var(--row-hit)}
+table.data td.neg{color:var(--ng)}
+table.data td.c{text-align:center}
+details.tbl > summary{cursor:pointer;font-size:13px;color:var(--navy);margin-top:16px;list-style:none;display:inline-flex;align-items:center;gap:6px}
+details.tbl > summary::-webkit-details-marker{display:none}
+details.tbl > summary::before{content:"＋";font-size:12px}
+details.tbl[open] > summary::before{content:"－"}
+
+/* 生涯目標 */
+.goal-intro{font-size:14px;color:var(--ink-2);margin:0 0 16px}
+table.goals{border-collapse:collapse;width:100%;font-size:14px;border-top:1px solid var(--line)}
+table.goals th{background:var(--th);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+table.goals td{padding:8px 12px;border-bottom:1px solid var(--line)}
+table.goals input,table.goals select{width:100%;height:34px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--ink);font:inherit;font-size:14px;padding:0 8px;border-radius:0}
+table.goals input.amt{text-align:right;font-variant-numeric:tabular-nums}
+table.goals .del{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:18px;line-height:1;padding:4px 8px}
+table.goals .del:hover{color:var(--ng)}
+table.goals tfoot td{background:var(--gold-soft);font-weight:700}
+.goal-actions{display:flex;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.goal-sum{font-size:14px;color:var(--ink-2)}
+.goal-sum b{font-family:"Noto Serif TC",serif;font-size:22px;color:var(--ink);margin:0 4px}
+.values{font-size:12px;color:var(--ink-3);margin-top:14px;line-height:1.7}
+
+/* 計算說明／注意事項 */
+.method{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.method div{border:1px solid var(--line);padding:16px 18px;background:var(--surface)}
+.method h4{margin:0 0 6px;font-size:14px;color:var(--navy)}
+.method p{margin:0;font-size:13px;color:var(--ink-2)}
+.method code{font-family:inherit;background:var(--bg-sub);padding:1px 6px;font-size:12.5px;color:var(--ink)}
+.notice{border:1px solid var(--line);background:var(--bg-sub);padding:20px 24px;margin-top:28px}
+.notice h4{margin:0 0 8px;font-size:14px}
+.notice ul{margin:0;padding-left:1.3em;font-size:12.5px;color:var(--ink-2)}
+.notice li{margin:2px 0}
+
+footer.site{background:var(--footer);color:var(--footer-ink);margin-top:72px;font-size:12px}
+footer.site .wrap{padding-top:28px;padding-bottom:28px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer.site b{color:#fff;font-weight:500;letter-spacing:.1em}
+
+@media (max-width:860px){
+  .form-grid{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi:nth-child(2){border-right:0}
+  .kpi:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .method{grid-template-columns:1fr}
+  .hero .wrap{grid-template-columns:1fr}
+  nav.gnav{display:none}
+}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .hero h1{font-size:26px}
+  .hero-steps div{min-width:0;flex:1;padding:10px 6px}
+  .sec-en{display:none}
+  .ftable th{width:44%;padding:10px}
+  .ftable td{padding:10px}
+  .kpi{padding:16px 14px}
+  .kpi .k-value{font-size:23px}
+  .chart-box{height:260px}
+  .chart-card{padding:14px 10px 8px}
+  table.goals th:nth-child(1),table.goals td:nth-child(1){width:30%}
+}
+@media print{
+  header.site nav,.form-actions,.goal-actions button,footer.site{display:none}
+  .tbl-wrap{max-height:none;overflow:visible}
+}
+</style>
+</head>
+<body>
+<div class="topline"></div>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="財務自由模擬器">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#1B3A6B"/><rect x="7" y="18" width="4" height="7" fill="#fff"/><rect x="14" y="13" width="4" height="12" fill="#fff"/><rect x="21" y="7" width="4" height="18" fill="#C9A063"/></svg>
+      <span class="brand-name">財務自由模擬器<small>FINANCIAL INDEPENDENCE SIMULATOR</small></span>
+    </a>
+    <nav class="gnav" aria-label="頁內導覽">
+      <a href="#sec-input">試算條件</a>
+      <a href="#sec-result">試算結果</a>
+      <a href="#sec-accum">資產累積</a>
+      <a href="#sec-retire">退休後</a>
+      <a href="#sec-goal">生涯目標</a>
+    </nav>
+    <button type="button" class="theme-btn" id="btnTheme" aria-label="切換深色／淺色顯示">深色</button>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap crumb"><span>首頁</span><span>理財試算工具</span><span>財務自由模擬器</span></div>
+
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">LIFE PLANNING SIMULATION</p>
+        <h1 class="serif">您的財務自由，<br>從試算開始。</h1>
+        <p class="lead">輸入目前的生活開銷與投資計畫，試算「投資回報足以支付生活開銷」的年份，並模擬退休後資產能否支撐到 90 歲。所有計算都在您的瀏覽器內完成，資料不會上傳。</p>
+        <p class="note">※ 本試算結果為依假設條件推算之參考值，並非未來報酬之保證。</p>
+      </div>
+      <div class="hero-steps" aria-hidden="true">
+        <div><b>01</b>輸入條件</div>
+        <div><b>02</b>確認結果</div>
+        <div><b>03</b>規劃退休</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01 試算條件 -->
+  <section class="block" id="sec-input">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">01</span><h2 class="sec-title">試算條件</h2><span class="sec-en">Simulation Settings</span></div>
+      <form id="form" novalidate>
+        <div class="form-grid">
+          <div>
+            <h3 class="sub-head">基本資料與生活開銷</h3>
+            <table class="ftable" role="presentation">
+              <tr><th><label for="age">目前年齡</label></th><td><div class="field"><input id="age" type="number" inputmode="numeric" min="18" max="89" step="1"><span class="unit">歲</span></div></td></tr>
+              <tr><th><label for="startYear">起始年份</label></th><td><div class="field"><input id="startYear" type="number" inputmode="numeric" min="1900" max="2200" step="1"><span class="unit">年</span></div></td></tr>
+              <tr><th><label for="monthlyExpense">每月生活開銷</label><span class="hint">可由「05 生涯目標」合計帶入</span></th><td><div class="field"><input id="monthlyExpense" type="text" inputmode="numeric" data-money><span class="unit">元</span></div></td></tr>
+              <tr><th><label for="inflation">通貨膨脹率</label><span class="hint">生活開銷每年增加的比例</span></th><td><div class="field"><input id="inflation" type="number" inputmode="decimal" step="0.1" min="-5" max="20"><span class="unit">%/年</span></div></td></tr>
+            </table>
+            <h3 class="sub-head">退休規劃<span class="tag">退休後</span></h3>
+            <table class="ftable" role="presentation">
+              <tr><th><label for="retireAge">預計退休年齡</label><span class="hint">退休後停止追加投資</span></th><td><div class="field"><input id="retireAge" type="number" inputmode="numeric" step="1"><span class="unit">歲</span></div></td></tr>
+              <tr><th><label for="retireReturn">退休後年報酬率</label></th><td><div class="field"><input id="retireReturn" type="number" inputmode="decimal" step="0.1" min="-20" max="30"><span class="unit">%/年</span></div></td></tr>
+              <tr><th><label for="retireCut">退休後生活開銷減少</label><span class="hint">例：不再通勤、房貸繳清</span></th><td><div class="field"><input id="retireCut" type="number" inputmode="decimal" step="1" min="0" max="90"><span class="unit">%</span></div></td></tr>
+            </table>
+          </div>
+          <div>
+            <h3 class="sub-head">投資計畫<span class="tag">累積期</span></h3>
+            <table class="ftable" role="presentation">
+              <tr><th><label for="initialInvest">初始投資金額</label><span class="hint">目前已投入的資產總值</span></th><td><div class="field"><input id="initialInvest" type="text" inputmode="numeric" data-money><span class="unit">元</span></div></td></tr>
+              <tr><th><label for="monthlyInvest">每月追加投資</label><span class="hint">每月可存下再投入的金額</span></th><td><div class="field"><input id="monthlyInvest" type="text" inputmode="numeric" data-money><span class="unit">元</span></div></td></tr>
+              <tr><th><label for="annualReturn">預估年報酬率</label><span class="hint">股息／利息＋價差的年化報酬</span></th><td><div class="field"><input id="annualReturn" type="number" inputmode="decimal" step="0.1" min="-20" max="30"><span class="unit">%/年</span></div></td></tr>
+              <tr><th><label for="payoutsPerYear">年度派息（複利）次數</label><span class="hint">配息再投入的頻率</span></th><td><div class="field"><select id="payoutsPerYear"><option value="1">年配（1 次）</option><option value="2">半年配（2 次）</option><option value="4">季配（4 次）</option><option value="12">月配（12 次）</option></select><span class="unit">&nbsp;</span></div></td></tr>
+            </table>
+          </div>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+        <div class="form-actions">
+          <button type="button" class="btn" id="btnReset">恢復預設值</button>
+          <button type="button" class="btn primary" id="btnGo">試算結果</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 02 試算結果 -->
+  <section class="block" id="sec-result">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">02</span><h2 class="sec-title">試算結果</h2><span class="sec-en">Result</span></div>
+      <div class="result-box">
+        <div class="result-head"><span>試算結果摘要</span><span id="resultStamp"></span></div>
+        <div class="kpis">
+          <div class="kpi hl"><div class="k-label">財務自由達成</div><div class="k-value" id="kFire">—</div><div class="k-sub" id="kFireSub"></div></div>
+          <div class="kpi"><div class="k-label">退休時資產總值</div><div class="k-value" id="kRetire">—</div><div class="k-sub" id="kRetireSub"></div></div>
+          <div class="kpi"><div class="k-label">90 歲時剩餘資產</div><div class="k-value" id="kFinal">—</div><div class="k-sub" id="kFinalSub"></div></div>
+          <div class="kpi"><div class="k-label">退休後平均年生活費</div><div class="k-value" id="kAvg">—</div><div class="k-sub" id="kAvgSub"></div></div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 資產累積期 -->
+  <section class="block" id="sec-accum">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">03</span><h2 class="sec-title">資產累積期</h2><span class="sec-en">Accumulation</span></div>
+      <div class="chart-card">
+        <div class="chart-top">
+          <span class="chart-title">年度投資回報 與 年度生活開銷</span>
+          <span class="legend"><span><i style="background:var(--s1)"></i>年度投資回報</span><span><i style="background:var(--s2)"></i>年度生活開銷</span></span>
+        </div>
+        <div class="chart-box"><canvas id="chartAccum" aria-label="年度投資回報與年度生活開銷折線圖" role="img"></canvas></div>
+        <p class="chart-cap">投資回報（投資總價值 × 年報酬率）第一次超過生活開銷的年份，即為財務自由年份。單位：萬元。</p>
+      </div>
+      <details class="tbl" open><summary>逐年明細表</summary>
+        <div class="tbl-wrap"><table class="data" id="tblAccum">
+          <thead><tr><th>年齡</th><th>年份</th><th>累計投入成本</th><th>投資總價值</th><th>年度投資回報</th><th>年度生活開銷</th><th>財務自由</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 04 退休後 -->
+  <section class="block" id="sec-retire">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">04</span><h2 class="sec-title">退休後資產推估</h2><span class="sec-en">Retirement</span></div>
+      <div class="chart-card">
+        <div class="chart-top">
+          <span class="chart-title" id="retireChartTitle">剩餘資產推移</span>
+          <span class="legend"><span><i class="area" style="background:var(--s1)"></i>年底剩餘資產</span></span>
+        </div>
+        <div class="chart-box"><canvas id="chartRetire" aria-label="退休後剩餘資產面積圖" role="img"></canvas></div>
+        <p class="chart-cap">退休次年起每年：年初資產 ＋ 投資回報 − 生活開銷 ＝ 年底剩餘資產。單位：萬元。</p>
+      </div>
+      <details class="tbl" open><summary>逐年明細表</summary>
+        <div class="tbl-wrap"><table class="data" id="tblRetire">
+          <thead><tr><th>年齡</th><th>年份</th><th>年初資產</th><th>投資回報</th><th>生活開銷</th><th>年底剩餘資產</th><th>足夠生活</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 05 生涯目標 -->
+  <section class="block" id="sec-goal">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec-title">生涯目標與必要支出</h2><span class="sec-en">Life Goals</span></div>
+      <p class="goal-intro">把想實現的夢想與每年必要的支出量化成數字，合計後即可帶入「每月生活開銷」重新試算。</p>
+      <div class="tbl-wrap" style="max-height:none;margin-top:0;border:0">
+        <table class="goals" id="tblGoals">
+          <thead><tr><th style="width:24%">類別</th><th>夢想／支出項目</th><th style="width:22%">每年金額（萬元）</th><th style="width:44px"><span class="sr" aria-label="刪除"></span></th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><td colspan="2">每年必要支出合計</td><td class="num" id="goalYear" style="text-align:right">0</td><td></td></tr></tfoot>
+        </table>
+      </div>
+      <div class="goal-actions">
+        <button type="button" class="btn small" id="btnAddGoal">＋ 新增一列</button>
+        <span class="goal-sum">換算每月<b class="num" id="goalMonth">0</b>元</span>
+        <button type="button" class="btn small primary" id="btnApplyGoal">帶入每月生活開銷並重新試算</button>
+      </div>
+      <p class="values">類別參考：事業／工作、生活、健康、財務、興趣、社交、貢獻、退休。<br>價值觀參考：愛、關係、信任、歸屬感、安全感、成長、自由、獨立自主、成功、穩定、成就感、創造改變、誠實正直、快樂、幫助、貢獻、冒險。</p>
+    </div>
+  </section>
+
+  <!-- 計算說明 -->
+  <section class="block" id="sec-method">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec-title">計算方式</h2><span class="sec-en">Methodology</span></div>
+      <div class="method">
+        <div><h4>年度生活開銷</h4><p>第 0 年 ＝ <code>每月生活開銷 × 12</code>，之後每年 <code>× (1 ＋ 通貨膨脹率)</code>。</p></div>
+        <div><h4>投資總價值（累積期）</h4><p>每期利率 ＝ <code>年報酬率 ÷ 派息次數</code>，每期期末投入 <code>每月追加投資 × 12 ÷ 派息次數</code>，逐期複利累積。</p></div>
+        <div><h4>財務自由判定</h4><p><code>年度投資回報 ＝ 投資總價值 × 年報酬率</code>；回報首次大於當年生活開銷的年份即為財務自由年份。</p></div>
+        <div><h4>退休後</h4><p>停止追加投資。退休當年生活開銷 ＝ <code>前一年 × (1 − 減少比例) × (1 ＋ 通膨率)</code>；自退休次年起每年扣除生活開銷，推估至 90 歲。</p></div>
+      </div>
+      <div class="notice">
+        <h4>注意事項</h4>
+        <ul>
+          <li>本試算以固定報酬率與固定通膨率推算，實際投資報酬會隨市場波動，可能產生虧損。</li>
+          <li>未計入稅負、手續費、匯率變動及突發的大額支出。</li>
+          <li>本工具僅供個人理財規劃參考，不構成任何投資建議或勸誘。</li>
+          <li>輸入的數值只儲存在您自己的瀏覽器中，不會傳送到任何伺服器。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span><b>財務自由模擬器</b>　Financial Independence Simulator</span>
+    <span>本頁所有試算皆於瀏覽器端執行</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="fire-core.js"></script>
+<script>
+(function(){
+  'use strict';
+  var DEFAULTS = {
+    age:30, startYear:new Date().getFullYear(), monthlyExpense:50000, inflation:2.5,
+    initialInvest:3000000, monthlyInvest:30000, annualReturn:5, payoutsPerYear:1,
+    retireAge:60, retireReturn:5, retireCut:5
+  };
+  var DEFAULT_GOALS = [
+    {cat:'生活', item:'日常生活費（餐飲、交通、日用品）', amt:30},
+    {cat:'生活', item:'居住支出（房租或房貸、管理費、水電）', amt:24},
+    {cat:'健康', item:'保險費', amt:6},
+    {cat:'財務', item:'孝親費、稅金等年度支出', amt:8},
+    {cat:'興趣', item:'每年出國旅行一次', amt:8},
+    {cat:'財務', item:'意外預備金', amt:4}
+  ];
+  var CATS = ['事業／工作','生活','健康','財務','興趣','社交','貢獻','退休'];
+  var KEY = 'fire-sim-v1';
+  var PCT = ['inflation','annualReturn','retireReturn','retireCut'];
+  var FIELDS = Object.keys(DEFAULTS);
+
+  function $(id){ return document.getElementById(id); }
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || null; }catch(e){ return null; } }
+  function save(state){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+  var fmt = new Intl.NumberFormat('zh-TW', {maximumFractionDigits:0});
+  function yen(v){ return fmt.format(Math.round(v)); }
+  function man(v){ return new Intl.NumberFormat('zh-TW',{maximumFractionDigits: Math.abs(v) < 1e6 ? 1 : 0}).format(v/1e4); }
+  function parseMoney(s){ var n = Number(String(s).replace(/[,，\s]/g,'')); return isFinite(n) ? n : NaN; }
+
+  // ---- 輸入 ----
+  function setForm(v){
+    FIELDS.forEach(function(k){
+      var el = $(k);
+      if (el.hasAttribute('data-money')) el.value = yen(v[k]);
+      else el.value = v[k];
+    });
+  }
+  function readForm(){
+    var v = {}, bad = [];
+    FIELDS.forEach(function(k){
+      var el = $(k), raw = el.hasAttribute('data-money') ? parseMoney(el.value) : Number(el.value);
+      if (el.value === '' || !isFinite(raw)) { bad.push(el); raw = NaN; }
+      v[k] = raw;
+    });
+    FIELDS.forEach(function(k){ $(k).removeAttribute('aria-invalid'); });
+    var msg = '';
+    function mark(k, m){ $(k).setAttribute('aria-invalid','true'); if(!msg) msg = m; }
+    bad.forEach(function(el){ mark(el.id, '請填寫數字。'); });
+    if (!msg) {
+      if (v.age < 18 || v.age > 89 || v.age % 1) mark('age','目前年齡請填 18～89 的整數。');
+      else if (v.retireAge % 1 || v.retireAge < v.age || v.retireAge > 89) mark('retireAge','預計退休年齡需介於目前年齡與 89 歲之間。');
+      ['monthlyExpense','initialInvest','monthlyInvest'].forEach(function(k){ if (v[k] < 0) mark(k,'金額不可為負數。'); });
+      if (v.retireCut < 0 || v.retireCut >= 100) mark('retireCut','減少比例請填 0～99%。');
+    }
+    $('err').textContent = msg;
+    return msg ? null : v;
+  }
+  function toCore(v){
+    var p = {};
+    FIELDS.forEach(function(k){ p[k] = PCT.indexOf(k) >= 0 ? v[k]/100 : v[k]; });
+    return p;
+  }
+
+  // ---- 圖表 ----
+  function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  var charts = {};
+  var markerPlugin = {
+    id:'marker',
+    afterDatasetsDraw:function(chart){
+      var m = chart.options.plugins.marker;
+      if (!m || m.index == null) return;
+      var x = chart.scales.x.getPixelForValue(m.index), a = chart.chartArea, ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = css('--accent'); ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(x, a.top + 18); ctx.lineTo(x, a.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = css('--accent'); ctx.font = '500 12px "Noto Sans TC", sans-serif';
+      var w = ctx.measureText(m.label).width;
+      var tx = Math.min(Math.max(x - w/2, a.left), a.right - w);
+      ctx.fillText(m.label, tx, a.top + 12);
+      ctx.restore();
+    }
+  };
+  function baseOptions(){
+    var ink2 = css('--ink-2'), grid = css('--grid');
+    return {
+      responsive:true, maintainAspectRatio:false, animation:{duration:250},
+      interaction:{mode:'index', intersect:false},
+      layout:{padding:{top:22}},
+      scales:{
+        x:{grid:{display:false}, border:{color:css('--line')}, ticks:{color:ink2, maxRotation:0, autoSkipPadding:12, font:{size:11}}},
+        y:{grid:{color:grid}, border:{display:false}, ticks:{color:ink2, font:{size:11}, callback:function(v){ return fmt.format(v); }}, title:{display:true, text:'萬元', color:ink2, font:{size:11}}}
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:css('--surface'), titleColor:css('--ink'), bodyColor:css('--ink-2'), borderColor:css('--line'), borderWidth:1, padding:10, boxPadding:4, usePointStyle:true,
+          callbacks:{label:function(c){ return ' ' + c.dataset.label + '：' + fmt.format(c.parsed.y) + ' 萬元'; }}}
+      }
+    };
+  }
+  function drawAccum(s){
+    var labels = s.accum.map(function(r){ return r.age + '歲'; });
+    var opt = baseOptions();
+    opt.plugins.tooltip.callbacks.title = function(items){ var r = s.accum[items[0].dataIndex]; return r.age + ' 歲（' + r.year + ' 年）'; };
+    opt.plugins.marker = s.fire ? {index: s.fire.age - s.accum[0].age, label:'財務自由 ' + s.fire.age + ' 歲'} : null;
+    var data = {labels:labels, datasets:[
+      {label:'年度投資回報', data:s.accum.map(function(r){ return r.index === 0 ? null : +(r.income/1e4).toFixed(1); }), borderColor:css('--s1'), backgroundColor:css('--s1'), borderWidth:2, pointRadius:0, pointHoverRadius:5, pointHoverBorderWidth:2, pointHoverBorderColor:css('--chart-surface'), tension:0},
+      {label:'年度生活開銷', data:s.accum.map(function(r){ return +(r.expense/1e4).toFixed(1); }), borderColor:css('--s2'), backgroundColor:css('--s2'), borderWidth:2, pointRadius:0, pointHoverRadius:5, pointHoverBorderWidth:2, pointHoverBorderColor:css('--chart-surface'), tension:0}
+    ]};
+    if (charts.a) charts.a.destroy();
+    charts.a = new Chart($('chartAccum'), {type:'line', data:data, options:opt, plugins:[markerPlugin]});
+  }
+  function drawRetire(s){
+    var rows = s.retire;
+    var opt = baseOptions();
+    opt.plugins.tooltip.callbacks.title = function(items){ var r = rows[items[0].dataIndex]; return r.age + ' 歲（' + r.year + ' 年）'; };
+    opt.plugins.marker = s.depletedAge ? {index: s.depletedAge - rows[0].age, label:'資金耗盡 ' + s.depletedAge + ' 歲'} : null;
+    var c1 = css('--s1');
+    var data = {labels: rows.map(function(r){ return r.age + '歲'; }), datasets:[
+      {label:'年底剩餘資產', data: rows.map(function(r){ return +(r.remain/1e4).toFixed(1); }), borderColor:c1, backgroundColor: c1 + '33', fill:'origin', borderWidth:2, pointRadius:0, pointHoverRadius:5, pointHoverBorderWidth:2, pointHoverBorderColor:css('--chart-surface'), tension:0}
+    ]};
+    if (charts.r) charts.r.destroy();
+    charts.r = new Chart($('chartRetire'), {type:'line', data:data, options:opt, plugins:[markerPlugin]});
+  }
+
+  // ---- 表格 ----
+  function status(ok, yes, no){ return '<span class="status ' + (ok ? 'ok' : 'ng') + '">' + (ok ? yes : no) + '</span>'; }
+  function money(v){ return '<td class="' + (v < 0 ? 'neg' : '') + '">' + (v == null ? '—' : yen(v)) + '</td>'; }
+  function drawTables(s){
+    var firstFire = s.fire ? s.fire.age : null;
+    $('tblAccum').tBodies[0].innerHTML = s.accum.map(function(r){
+      return '<tr' + (r.age === firstFire ? ' class="hit"' : '') + '><td>' + r.age + '</td><td>' + r.year + '</td>' +
+        money(r.cost) + money(r.value) + money(r.income) + money(r.expense) +
+        '<td class="c">' + status(r.fire, r.age === firstFire ? '達成' : '是', '未達') + '</td></tr>';
+    }).join('');
+    $('tblRetire').tBodies[0].innerHTML = s.retire.map(function(r, i){
+      return '<tr' + (r.age === s.depletedAge ? ' class="hit"' : '') + '><td>' + r.age + (i === 0 ? '<br><small style="color:var(--ink-3)">退休</small>' : '') + '</td><td>' + r.year + '</td>' +
+        money(r.start) + money(r.income) + money(r.expense) + money(r.remain) +
+        '<td class="c">' + status(r.ok, '足夠', '不足') + '</td></tr>';
+    }).join('');
+  }
+
+  // ---- 摘要 ----
+  function drawSummary(v, s){
+    $('resultStamp').textContent = v.age + ' 歲起算 · 年報酬 ' + v.annualReturn + '% · 通膨 ' + v.inflation + '%';
+    if (s.fire) {
+      $('kFire').innerHTML = s.fire.year + '<small>年</small>';
+      $('kFireSub').textContent = s.fire.age + ' 歲，距今 ' + (s.fire.age - v.age) + ' 年';
+    } else {
+      $('kFire').innerHTML = '未達成';
+      $('kFireSub').textContent = s.accum[s.accum.length-1].age + ' 歲前投資回報仍不足支付開銷';
+    }
+    $('kRetire').innerHTML = man(s.retireStartValue) + '<small>萬元</small>';
+    $('kRetireSub').textContent = v.retireAge + ' 歲退休時';
+    $('kFinal').innerHTML = man(s.finalValue) + '<small>萬元</small>';
+    $('kFinalSub').innerHTML = s.depletedAge ? status(false, '', s.depletedAge + ' 歲資金耗盡') : status(true, '資金可支撐到 90 歲', '');
+    $('kAvg').innerHTML = man(s.avgRetireExpense) + '<small>萬元</small>';
+    $('kAvgSub').textContent = (v.retireAge + 1) + '～90 歲平均';
+
+    var t;
+    if (s.fire && s.fire.age <= v.retireAge && !s.depletedAge)
+      t = '在目前條件下，您預計 <b>' + s.fire.age + ' 歲</b>時投資回報即可支付生活開銷，' + v.retireAge + ' 歲退休後資產可支撐到 90 歲。';
+    else if (s.depletedAge)
+      t = '在目前條件下，' + v.retireAge + ' 歲退休後資產預計於 <b>' + s.depletedAge + ' 歲</b>耗盡。可考慮延後退休、提高每月投資，或降低退休後的生活開銷。';
+    else if (s.fire)
+      t = '財務自由預計在 <b>' + s.fire.age + ' 歲</b>達成，晚於預計退休年齡 ' + v.retireAge + ' 歲，但退休後資產仍可支撐到 90 歲。';
+    else
+      t = '在試算期間內投資回報尚未超過生活開銷；退休後資產仍可支撐到 90 歲。';
+    $('verdict').innerHTML = t;
+  }
+
+  function run(){
+    var v = readForm();
+    if (!v) return;
+    var s = FireCore.simulate(toCore(v));
+    drawSummary(v, s); drawTables(s);
+    if (window.Chart) { drawAccum(s); drawRetire(s); }
+    state.inputs = v; save(state);
+    lastV = v; lastS = s;
+  }
+
+  // ---- 生涯目標 ----
+  function goalRow(g){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><select aria-label="類別">' + CATS.map(function(c){ return '<option' + (c === g.cat ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></td>' +
+      '<td><input type="text" aria-label="夢想或支出項目"></td>' +
+      '<td><input type="number" class="amt" inputmode="decimal" step="0.5" min="0" aria-label="每年金額（萬元）"></td>' +
+      '<td><button type="button" class="del" aria-label="刪除這一列">×</button></td>';
+    tr.querySelector('input[type=text]').value = g.item;
+    tr.querySelector('input.amt').value = g.amt;
+    return tr;
+  }
+  function readGoals(){
+    return [].map.call($('tblGoals').tBodies[0].rows, function(tr){
+      return {cat: tr.querySelector('select').value, item: tr.querySelector('input[type=text]').value, amt: Number(tr.querySelector('input.amt').value) || 0};
+    });
+  }
+  function goalTotals(){
+    var y = readGoals().reduce(function(a, g){ return a + g.amt; }, 0);
+    $('goalYear').textContent = new Intl.NumberFormat('zh-TW',{maximumFractionDigits:1}).format(y) + ' 萬元';
+    $('goalMonth').textContent = yen(y * 1e4 / 12);
+    state.goals = readGoals(); save(state);
+    return y;
+  }
+  function drawGoals(list){
+    var tb = $('tblGoals').tBodies[0]; tb.innerHTML = '';
+    list.forEach(function(g){ tb.appendChild(goalRow(g)); });
+    goalTotals();
+  }
+
+  // ---- 初始化 ----
+  var stored = load() || {};
+  var state = {inputs: stored.inputs || null, goals: stored.goals || null};
+  var lastV, lastS;
+  var init = {};
+  FIELDS.forEach(function(k){ init[k] = (state.inputs && state.inputs[k] != null && isFinite(state.inputs[k])) ? state.inputs[k] : DEFAULTS[k]; });
+  setForm(init);
+  drawGoals(state.goals && state.goals.length ? state.goals : DEFAULT_GOALS);
+
+  var timer;
+  $('form').addEventListener('input', function(){ clearTimeout(timer); timer = setTimeout(run, 200); });
+  [].forEach.call(document.querySelectorAll('[data-money]'), function(el){
+    el.addEventListener('blur', function(){ var n = parseMoney(el.value); if (isFinite(n) && el.value !== '') el.value = yen(n); });
+  });
+  $('btnGo').addEventListener('click', function(){ run(); if (!$('err').textContent) $('sec-result').scrollIntoView({behavior:'smooth'}); });
+  $('btnReset').addEventListener('click', function(){ setForm(DEFAULTS); run(); });
+  $('tblGoals').addEventListener('input', goalTotals);
+  $('tblGoals').addEventListener('change', goalTotals);
+  $('tblGoals').addEventListener('click', function(e){
+    if (e.target.classList.contains('del')) { e.target.closest('tr').remove(); goalTotals(); }
+  });
+  $('btnAddGoal').addEventListener('click', function(){ $('tblGoals').tBodies[0].appendChild(goalRow({cat:'生活', item:'', amt:0})); goalTotals(); });
+  $('btnApplyGoal').addEventListener('click', function(){
+    var y = goalTotals();
+    $('monthlyExpense').value = yen(y * 1e4 / 12);
+    run();
+    $('sec-input').scrollIntoView({behavior:'smooth'});
+  });
+  function syncThemeBtn(){
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    $('btnTheme').textContent = dark ? '淺色' : '深色';
+  }
+  $('btnTheme').addEventListener('click', function(){
+    var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    try{ localStorage.setItem('fire-sim-theme', dark ? 'dark' : 'light'); }catch(e){}
+    syncThemeBtn();
+    if (lastS && window.Chart) { drawAccum(lastS); drawRetire(lastS); }
+  });
+  syncThemeBtn();
+  run();
+})();
+</script>
+</body>
+</html>
